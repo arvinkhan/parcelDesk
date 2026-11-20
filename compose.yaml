@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: parceldesk
+      POSTGRES_PASSWORD: parceldesk
+      POSTGRES_DB: parceldesk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parceldesk -d parceldesk"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - parceldata:/var/lib/postgresql
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://parceldesk:parceldesk@postgres:5432/parceldesk
+      SESSION_SECRET: local-compose-parceldesk-demo-secret
+      DEMO_MODE: "true"
+    command: ["sh", "-c", "node dist/setup.js seed && exec node dist/server.js"]
+    ports:
+      - "127.0.0.1:3000:3000"
+volumes:
+  parceldata:
